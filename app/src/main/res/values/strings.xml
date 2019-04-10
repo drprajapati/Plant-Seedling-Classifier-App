@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Plant Seed Classifier</string>
+    <string name="detect">Detect</string>
+    <string name="clear">Clear</string>
+    <string name="preview_scaled">0</string>
+    <string name="result_label">Result : </string>
+    <string name="add_image">Add Image</string>
+    <string name="random">Random</string>
+</resources>
