@@ -23,8 +23,8 @@ public class Classifier {
     private static final String MODEL_PATH = "plant_seedling_classification_tflite.tflite";
 
     private static final int DIM_BATCH_SIZE = 1;
-    public static final int DIM_IMG_SIZE_HEIGHT = 70;
-    public static final int DIM_IMG_SIZE_WIDTH = 70;
+    private static final int DIM_IMG_SIZE_HEIGHT = 70;
+    private static final int DIM_IMG_SIZE_WIDTH = 70;
     private static final int DIM_PIXEL_SIZE = 3;
     private static final int CATEGORY_COUNT = 12;
 

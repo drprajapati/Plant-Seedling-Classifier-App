@@ -25,8 +25,6 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private static final int PIXEL_WIDTH = 28;
-
     private Classifier mClassifier;
     private int mIndex;
     private AppCompatImageView mImageView;
@@ -70,21 +68,11 @@ public class MainActivity extends AppCompatActivity {
             @SuppressLint("SetTextI18n")
             @Override
             public void onClick(View v) {
-
                 Bitmap image = BitmapFactory.decodeResource(getResources(),mImages.get(mIndex));
-               Bitmap scaled = Bitmap.createScaledBitmap(image, 70,70,true);
+                Bitmap scaled = Bitmap.createScaledBitmap(image, 70,70,true);
                 mImageView.setImageResource(mImages.get(mIndex));
                 Result result = mClassifier.classify(scaled);
                 mResultTextView.setText("Result: " + result.getNumber());
-
-
-                //                Bitmap image = mUploadButton.exportToBitmap(
-//                            Classifier.DIM_IMG_SIZE_WIDTH, Classifier.DIM_IMG_SIZE_HEIGHT);
-//                    // The model is trained on images with black background and white font
-//                    Bitmap inverted = ImageUtil.invert(image);
-//                    Result result = mClassifier.classify(inverted);
-//                    mResultTextView.setText("Result : " + result.getNumber());
-
             }
         });
         mRandomButton.setOnClickListener(new View.OnClickListener() {
