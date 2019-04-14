@@ -6,4 +6,6 @@
     <string name="result_label">Result : </string>
     <string name="add_image">Add Image</string>
     <string name="random">Random</string>
+    <string name="choose_image">Choose Image</string>
+    <string name="classify">Classify</string>
 </resources>

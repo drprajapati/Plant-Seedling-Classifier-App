@@ -1,47 +1,46 @@
 package com.drprajapati.android.plantclassification;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatImageView;
-
-import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-import android.util.Log;
+import android.text.Html;
+import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.drprajapati.android.plantclassification.ml.Classifier;
-import com.drprajapati.android.plantclassification.ml.Result;
-import com.drprajapati.android.plantclassification.utils.ImageUtil;
+import com.drprajapati.android.plantclassification.ml.TensorFlowImageClassifier;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private Classifier mClassifier;
-    private int mIndex;
+    private static final int INPUT_SIZE = 70;
+    private static final boolean QUANT = false;
+    private static final String MODEL_PATH= "plant_seedling_classification_tflite.tflite";
+    private static final String LABEL_PATH = "labels.txt";
+
+    private Classifier classifier;
+    private Executor executor = Executors.newSingleThreadExecutor();
+    private TextView textViewResult;
+    private Button btnDetectObject,mRandomButton;
+    private ImageView imageViewResult;
     private AppCompatImageView mImageView;
-    private Button mUploadButton, mRandomButton;
     private List<Integer> mImages;
-    private TextView mResultTextView;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        wireUpWidgets();
-        loadImages();
-        setUpClassifier();
-
-        setListeners();
-
+    private int mIndex;
+    public static Intent getIntent(Context packageContext) {
+        return new Intent(packageContext, MainActivity.class);
     }
 
     private void loadImages() {
@@ -53,26 +52,26 @@ public class MainActivity extends AppCompatActivity {
         mImages.add(R.drawable.test4529);
     }
 
-    private void setUpClassifier() {
-        try {
-            mClassifier = new Classifier(this);
-        } catch (Exception ex) {
-            Toast.makeText(this, "Failed to create classifier...", Toast.LENGTH_LONG).show();
-            Log.e(LOG_TAG, "setUpClassifier(): Failed to create tflite model", ex);
-        }
-    }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getSupportActionBar().setTitle(Html.fromHtml("<font color=\"#1faa00\">" + getString(R.string.app_name) + "</font>"));
+        setContentView(R.layout.activity_main);
+        loadImages();
+        windUpWidgets();
 
-    private void setListeners() {
-
-        mUploadButton.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("SetTextI18n")
+        btnDetectObject.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Bitmap image = BitmapFactory.decodeResource(getResources(),mImages.get(mIndex));
-                Bitmap scaled = Bitmap.createScaledBitmap(image, 70,70,true);
                 mImageView.setImageResource(mImages.get(mIndex));
-                Result result = mClassifier.classify(scaled);
-                mResultTextView.setText("Result: " + result.getNumber());
+                Bitmap bitmap = BitmapFactory.decodeResource(getResources(),mImages.get(mIndex));
+                bitmap = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
+
+                imageViewResult.setImageBitmap(bitmap);
+
+                final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
+
+                textViewResult.setText(results.toString());
             }
         });
         mRandomButton.setOnClickListener(new View.OnClickListener() {
@@ -83,14 +82,58 @@ public class MainActivity extends AppCompatActivity {
                 mImageView.setImageResource(mImages.get(mIndex));
             }
         });
+
+
+        initTensorFlowAndLoadModel();
     }
 
-
-    private void wireUpWidgets() {
-        mImageView = findViewById(R.id.imageView);
-        mUploadButton = findViewById(R.id.button_detect);
-        mResultTextView = findViewById(R.id.text_result);
+    private void windUpWidgets() {
         mRandomButton = findViewById(R.id.random_detect);
+        mImageView = findViewById(R.id.imageView);
+        imageViewResult = findViewById(R.id.imageViewResult);
+        textViewResult = findViewById(R.id.textViewResult);
+        textViewResult.setMovementMethod(new ScrollingMovementMethod());
+        btnDetectObject = findViewById(R.id.button_detect);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                classifier.close();
+            }
+        });
+    }
+
+    private void initTensorFlowAndLoadModel() {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    classifier = TensorFlowImageClassifier.create(
+                            getAssets(),
+                            MODEL_PATH,
+                            LABEL_PATH,
+                            INPUT_SIZE,
+                            QUANT);
+                    makeButtonVisible();
+                } catch (final Exception e) {
+                    throw new RuntimeException("Error initializing TensorFlow!", e);
+                }
+            }
+        });
+    }
+
+    private void makeButtonVisible() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                btnDetectObject.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
 
 }
